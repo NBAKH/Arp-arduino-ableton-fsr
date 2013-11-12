@@ -1,0 +1,70 @@
+//I use this program http://projectgus.github.io/hairless-midiserial/ to interface between serial (arduino) and midi.
+
+#include <MIDI.h> //find it on http://arduino.cc/playground/Main/MIDILibrary
+
+int sensorPins[] = //define analog pins 0, 1, 2, 3
+{0, 1, 2, 3};       
+int pinCount = 4; //number of pins (used in the for-loop)      
+int sensorValues[] = //to safe and send the analog value
+{0, 1, 2, 3};
+
+void setup() 
+{
+ MIDI.begin(1);
+ Serial.begin(9600);
+ for (int thisPin = 0; thisPin < pinCount; thisPin++)  //initialize analog pins 0, 1, 2, 3
+ {
+    pinMode(sensorPins[thisPin], INPUT);      
+ }
+  for (int thisValue = 0; thisValue < pinCount; thisValue++)  //set start value
+ {
+    sensorValues[thisValue] = 0;
+ }
+}
+
+void loop()
+{
+ for (int i = 0; i<pinCount; i++)
+ {
+   sensorValues[i] = analogRead(sensorPins[i]); //check value for each pin
+   readInput(sensorValues[i], sensorPins[i]); 
+ }
+ delay(5);
+}
+
+int readInput(int value, int sensorPin)
+{
+  if(value>=100) //set this value (100) just above the noise lvl from your sensors
+  {
+    midiHandler( value,  sensorPin);
+  }  
+}
+
+int midiHandler(int value, int sensorPin)
+{
+  int velocity = 0;
+  velocity = map(value, 0, 1023, 0, 127); //maps the velocity to something inbetween 0 and 127
+  switch (sensorPin) 
+  {
+    case 0:
+       playMidi(60, velocity);
+       break;
+    case 1:
+       playMidi(62, velocity);
+       break;
+    case 2:
+       playMidi(64, velocity);
+       break;
+    case 3:
+       playMidi(65, velocity);
+       break;
+   }
+}
+
+int playMidi(int note, int velocity)
+{
+   MIDI.send(NoteOn, note, velocity,1); //send start note to the serial<=>midi interface
+   delay(100);
+   MIDI.send(NoteOff, note, velocity,1); //send stop note to the serial<=>midi interface
+   
+}
